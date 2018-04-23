@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, jsonify
 import spacy
 from fuzzywuzzy import process
 import random
+import json
+import os.path
+
 app = Flask(__name__)
 
 @app.route("/")
@@ -12,20 +15,32 @@ def inicio():
 
 def ask():
     message = str(request.form['messageText'])
+    if os.path.isfile('conversacion.json'):
+        data = leer('conversacion')
+    else:
+        data = {}
+
     while True:
         if message == "adios":
             exit()
         else:
             pybot = respuesta(message)
+            #data = {}
+            data[pybot] = message
+            escribir('./','conversacion',data)
             return jsonify({'status':'OK','answer':pybot})
 
 def respuesta(mensaje):
     #choices = ["Atlanta Falcons", "New York Jets", "New York Giants", "Dallas Cowboys"]
-    saludo = ["Hola", "¿Qué tal?", "Bienvenido", "Mucho gusto"]
+    noEntendi = ["Puedes ser un poco más claro", "Podrías especificar más",
+    "No te entiendo -.-", "Ni idea!", "Preguntas serias por favor!"]
 
     respuestas = {
         "Hola": ["Hola amigo!", "Hola!", "Bienvenido!", "¿Qué tal?!"],
         "Hey": ["Hola!", "Eey!", "Hola de nuevo!", "¿Qué hay?!"],
+        "Gracias": ["No hay de qué!", "Para eso estamos", "cúando quieras!", "De nada :D"],
+        "Bien": ["Me alegra escuchar eso!", "Que bueno!", "Genial, porque hoy será un dá duro!",
+         "Vamo a darle!!"],
         "pierna": ["Sentadillas con Extenciones",
                           "Extensiones y prensa",
                           "Leg curl y Desplantes",
@@ -42,13 +57,21 @@ def respuesta(mensaje):
         ],
     }
     palabraMasParecida = process.extract(mensaje, respuestas.keys(), limit=1)[0]
+    prob = palabraMasParecida[1]
+    if(prob < 50):
+        respuesta  = random.choice(noEntendi)
+    else:
+        respuesta = random.choice(respuestas.get(palabraMasParecida[0]))
 
-    #process.extract(mensaje, choices, limit=2)
-    #var = process.extractOne(mensaje, choices)
-    #var = process.extract(mensaje, saludo)
-    ##arreglo = var[0]
-    #print(arreglo[1])
-    return random.choice(respuestas.get(palabraMasParecida[0]))
+    return respuesta
+
+def escribir(path, fileName, data):
+    filePathNameWExt = './' + path + '/' + fileName + '.json'
+    with open(filePathNameWExt, 'w') as fp:
+        json.dump(data, fp)
+def leer(nombre):
+    with open('./'+nombre+'.json') as js:
+        return json.load(js)
 
 if __name__ == "__main__":
     app.run(debug=True,use_reloader=True)
@@ -58,4 +81,3 @@ if __name__ == "__main__":
 #checamos si es saludo
 
 #saludo, rutina, ejercicio
-
