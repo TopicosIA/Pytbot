@@ -272,7 +272,7 @@ def find_candidate_parts_of_speech(parsed):
     verb.append('')
     det.append('')
 
-    print(pronoun, aux, noun, adjective, verb, det)
+    print("pronoun: ",pronoun, "aux: ",aux,"noun: ", noun,"adjective: ", adjective,"verb: ", verb,"det: ", det)
     logger.info("Pronoun=%s, noun=%s, adjective=%s, verb=%s", pronoun[0], noun[0], adjective[0], verb[0])             
 
     return pronoun[0],aux[0], noun[indice], adjective[0], verb[0], det[0]
@@ -283,4 +283,4 @@ def fitback(sentence):
     resp = respond(sentence)
     return resp
 	
-print(fitback('Que me recomiendas hacer para pierna?'))
+print(fitback('cuantas repeticiones?'))
