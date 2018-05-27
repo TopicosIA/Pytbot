@@ -71,6 +71,22 @@
     "Mujer":"Mujer",
     "hembra":"Mujer",
     "macha":"Mujer"
+  },
+  "tiempo_En_Gym":
+  {
+    "dias":"días",
+    "días":"días",
+    "meses":"meses",
+    "años":"años",
+    "semana":"semana",
+    "semanas":"semanas",
+    "no se": "días",
+    "ni idea": "días",
+    "no se": "días",
+    "soy nuevo":"días",
+    "se me olvido":"días",
+    "ayer":"ayer",
+    "antier":"antier"
   }
- 
+
 }

@@ -91,9 +91,20 @@
 
         <script src="http://code.jquery.com/jquery-1.12.4.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-        <script>
 
+        <script type="text/javascript">
+        if (window.performance) {
+          console.info("window.performance works fine on this browser");
+        }
+          if (performance.navigation.type == 1) {
+            console.info( "This page is reloaded" );
+          } else {
+            console.info( "This page is not reloaded");
+          }
+        </script>
+        <script>
         $(function() {
+
             $('#chatbot-form-btn').click(function(e) {
                 e.preventDefault();
                 $('#chatbot-form').submit();
