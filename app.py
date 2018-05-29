@@ -42,10 +42,11 @@ def ask():
             user = user_[data["usuarioActual"]]
 
             if ("nombre" in user and "edad"in user and "sexo" in user and "tiempo" in user) and user["tiempo"] != "inf":
-                pybot = respuesta(message,database)
-                data[pybot] = message
-                #escribir('./','conversacion',data)
-                return jsonify({'status':'OK','answer':pybot})
+                if "ult_rutina" in user:
+                    if user["ult_rutina"]=="si":
+                        return dar_rutina(user,data,database,message)
+                if "rutina" in user:
+                    return analizar_respuestas_usuario(user,data,database,message)
 
         if 'inicio' in data:
             if data["inicio"]=="True":
@@ -107,23 +108,154 @@ def ask():
                 string = "Muy bien "+message+". Te hare una serie de preguntas, ¿estás listo?"
                 return jsonify({'status':'OK','answer':string})
 
+def analizar_respuestas_usuario(user,data,database,message):
+    mensaje = "Aqui andamos traficando rutinas.."
+    return jsonify({'status':'OK','answer':mensaje})
+
 def validar_tiempo_Gym(data,database,message,nomb):
     #buscamos si ha puesto alguna informacion como dias, meses o años
     respuestas = database["tiempo_En_Gym"]
     palabraMasParecida = process.extract(message, respuestas.keys(), limit=1)[0]
+    string = ""
     if palabraMasParecida[1] < 70:
         nomb["tiempo"]="inf"
-        string = "Para proporcionar una mejor atención, debemos saber cuanto tiempo llevas haciando ejercicio, por ejemplo 1 mes"
+        string = "Para proporcionar una mejor atención, debemos saber cuanto tiempo llevas haciando ejercicio, por ejemplo escribe: 1 mes."
     else:
         #para saber los dias 1,2,3, etc..
         numero = validar_edad(message)
         lista = []
-        lista.append([numero, respuestas[palabraMasParecida[0]]])
+        lista.append(numero)
+        lista.append(respuestas[palabraMasParecida[0]])
         nomb["tiempo"]= lista
-        escribir('./','conversacion',data)
-        string = "Esta sera tu rutina ..."
+        if respuestas[palabraMasParecida[0]] == "nuevo":
+            return rutina_nuevo(database,nomb,data)
+        else:
+             string = "¿Cúal/es fue el ultimo musculo/s que realizaste?"
+             nomb["ult_rutina"]="si"
+             escribir('./','conversacion',data)
     return jsonify({'status':'OK','answer':string})
 
+def rutina_nuevo(database, nomb, data):
+    lista = []
+    lista.append(0)
+    lista.append("días")
+    nomb["tiempo"]= lista
+    respuestas_rutinas = database["respuestas_rutinas"]
+    lista_ejercicios = ["pierna","espalda","triceps","hombro","pecho","abdomen","biceps"]
+    random.shuffle(lista_ejercicios)
+    mensaje = "Bien novato, tu rutina será: <br>"
+    dic = {}
+    for i in range(4):
+        ejercicio = lista_ejercicios[i]
+        random.shuffle(respuestas_rutinas[ejercicio])
+        dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1]]
+        mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ "<br> "
+    if nomb["sexo"] == "Mujer":
+        mensaje += "3 sereis de 8 repeticiones todos los ejercicios."
+    else:
+        mensaje += "4 sereis de 8 repeticiones todos los ejercicios."
+    nomb["ult_rutina"] = dic
+    nomb["rutina"] = dic
+    escribir('./','conversacion',data)
+    return jsonify({'status':'OK','answer':mensaje})
+
+def validar_ultima_rutina(user,data,database,message):
+    #separamos el mensaje del usuario
+    rutina = message.split( )
+    lista_ej = ["pierna","espalda","triceps","hombro","pecho","abdomen","biceps"]
+    ejercicios = database["lista_ejercicios"]
+    for musculo in rutina:
+        #quitamos los ejercicios que ya hizo ayer
+        palabraMasParecida = process.extract(musculo, ejercicios.keys(), limit=1)[0]
+        if palabraMasParecida[0] in lista_ej:
+            lista_ej.remove(palabraMasParecida[0]);
+    random.shuffle(lista_ej)
+
+    return lista_ej
+
+def dar_rutina(user,data,database,message):
+    lista_ejercicios = validar_ultima_rutina(user,data,database,message)
+    respuestas_rutinas = database["respuestas_rutinas"]
+    mensaje = ""
+    dic = {}
+    if len(lista_ejercicios) == 6:
+        mensaje += "Bien, como no sabes que hiciste la última vez entonces y analizando tu informacion "+ user["nombre"]+" harás lo siguiente: <br>"
+    else:
+        mensaje += "Analizando todo lo que me acabas de decir "+user["nombre"]+" tu rutina será la siguiente: <br>"
+
+    if user["sexo"] == "Hombre":
+        if user["tiempo"][1] == "días" or user["tiempo"][1] == "semanas" or user["tiempo"][1] == "mes":
+            if user["edad"] < 12 and user["edad"] > 45:
+                #Le ponemos 3 musculos, pero pocos ejercicios
+                for i in range(3):
+                    ejercicio = lista_ejercicios[i]
+                    random.shuffle(respuestas_rutinas[ejercicio])
+                    dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1]]
+                    mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                    mensaje += "4 sereis de 8 repeticiones todos los ejercicios."
+            else:
+                for i in range(4):
+                    ejercicio = lista_ejercicios[i]
+                    random.shuffle(respuestas_rutinas[ejercicio])
+                    dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1]]
+                    mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                    mensaje += "4 sereis de 10 repeticiones todos los ejercicios."
+        elif user["tiempo"][1]== "meses":
+            for i in range(2):
+                ejercicio = lista_ejercicios[i]
+                random.shuffle(respuestas_rutinas[ejercicio])
+                dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1],respuestas_rutinas[ejercicio][2]]
+                mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                mensaje += "4 sereis de 12 repeticiones todos los ejercicios."
+        else:
+            for i in range(2):
+                ejercicio = lista_ejercicios[i]
+                random.shuffle(respuestas_rutinas[ejercicio])
+                dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1],respuestas_rutinas[ejercicio][2],respuestas_rutinas[ejercicio][3]]
+                mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                mensaje += "4 sereis de 15 a 20 repeticiones todos los ejercicios."
+    else:
+        if user["tiempo"][1] == "días" or user["tiempo"][1] == "semanas" or user["tiempo"][1] == "mes":
+            if user["edad"] < 12 and user["edad"] > 45:
+                #Le ponemos 3 musculos, pero pocos ejercicios
+                for i in range(3):
+                    ejercicio = lista_ejercicios[i]
+                    random.shuffle(respuestas_rutinas[ejercicio])
+                    dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1],respuestas_rutinas[ejercicio][3]]
+                    mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                    mensaje += "2 sereis de 8 repeticiones todos los ejercicios."
+            else:
+                for i in range(4):
+                    ejercicio = lista_ejercicios[i]
+                    random.shuffle(respuestas_rutinas[ejercicio])
+                    dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1]]
+                    mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                    mensaje += "3 sereis de 10 repeticiones todos los ejercicios."
+        elif user["tiempo"][1]== "meses":
+            for i in range(2):
+                ejercicio = lista_ejercicios[i]
+                random.shuffle(respuestas_rutinas[ejercicio])
+                dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1],respuestas_rutinas[ejercicio][2]]
+                mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                if(ejercicio == "pierna"):
+                    mensaje += "4 sereis de 15 repeticiones todos los ejercicios."
+                else:
+                    mensaje += "4 sereis de 10 repeticiones todos los ejercicios."
+        else:
+            for i in range(2):
+                ejercicio = lista_ejercicios[i]
+                random.shuffle(respuestas_rutinas[ejercicio])
+                dic[ejercicio] = [respuestas_rutinas[ejercicio][0],respuestas_rutinas[ejercicio][1],respuestas_rutinas[ejercicio][2],respuestas_rutinas[ejercicio][3]]
+                mensaje += ejercicio +" : "+ respuestas_rutinas[ejercicio][0] +" y "+ respuestas_rutinas[ejercicio][1]+ ",<br> "
+                if(ejercicio == "pierna"):
+                    mensaje += "4 sereis de 20 repeticiones todos los ejercicios."
+                else:
+                    mensaje += "4 sereis de 12 repeticiones todos los ejercicios."
+
+    user["ult_rutina"] = dic
+    user["rutina"] = dic
+    escribir('./','conversacion',data)
+    return jsonify({'status':'OK','answer':mensaje})
 def validar_edad(message):
     var = re.sub("[^0-9]", "", message)
     if (var == ""):
@@ -136,7 +268,7 @@ def verificar_edad(nomb,message,data):
     if float(edad) <= 5 :
         string = "¡Por favor!, dime tu edad para poder ayudarte"
     else:
-        string = "Por cierto ¿Eres Hombre ó Mujer?"
+        string = "Bien, ¿Eres Hombre ó Mujer?"
         nomb["edad"]=edad
         nomb["sexo"]="indef"
         escribir('./','conversacion',data)
@@ -151,7 +283,7 @@ def despedida(data):
 
 def checar_inicio(mensaje,database):
     respuestas = database["respuestas_Si_No"]
-    palabraMasParecida = process.extract(mensaje, respuestas, limit=1)[0]
+    palabraMasParecida = process.extract(mensaje, respuestas.keys(), limit=1)[0]
     return respuestas.get(palabraMasParecida[0])
 
 def checar_sexo(mensaje,database,nomb,data):
@@ -184,19 +316,6 @@ def checar_saludo(mensaje):
         respuesta = random.choice(respuestas)
     return respuesta,esSaludo
 
-
-"""def find_pronoun(sent):
-    #Given a sentence, find a preferred pronoun to respond with. Returns None if no candidate pronoun is found in the input
-    pronoun = None
-
-    for word, part_of_speech in sent.pos_tags:
-        # Disambiguate pronouns
-        if part_of_speech == 'PRP' and word.lower() == 'tu':
-            pronoun = 'yo'
-        elif part_of_speech == 'PRP' and word == 'yo':
-            # If the user mentioned themselves, then they will definitely be the pronoun
-            pronoun = 'tu'
-    return pronoun"""
 
 def check_for_comment_about_bot(pronoun, noun, adjective,det):
     #SELF_VERBS_WITH_NOUN_LOWER = [ "Yeah but I know a lot about {noun}", "My bros always ask me about {noun}"]

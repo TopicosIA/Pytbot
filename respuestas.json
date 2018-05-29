@@ -76,17 +76,30 @@
   {
     "dias":"días",
     "días":"días",
+    "mes":"mes",
     "meses":"meses",
     "años":"años",
+    "año":"años",
     "semana":"semana",
     "semanas":"semanas",
     "no se": "días",
     "ni idea": "días",
     "no se": "días",
-    "soy nuevo":"días",
+    "soy nuevo":"nuevo",
     "se me olvido":"días",
     "ayer":"ayer",
     "antier":"antier"
+  },
+  "lista_ejercicios":
+  {
+    "biceps":"biceps",
+    "espalda":"espalda",
+    "triceps":"triceps",
+    "pierna":"pierna",
+    "femoral":"pierna",
+    "cuadriceps":"pierna",
+    "hombro": "hombro",
+    "pecho": "pecho",
+    "abdomen": "abdomen"
   }
-
 }
